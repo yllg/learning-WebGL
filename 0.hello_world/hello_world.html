@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGL Hello world</title>
+</head>
+
+<body>
+  <canvas width="300" height="300"></canvas>
+  <script>
+    const canvas = document.querySelector('canvas');
+    const gl = canvas.getContext('webgl');
+    // 顶点着色器
+    // attribute 变量声明; vec2 变量类型，2维变量; position 变量名
+    // gl_PointSize 是顶点着色器内置变量
+    // 直接对 position * 0.5就可以整体缩小一倍，不用position数组中一个个的修改
+    // 使用 varying 变量把 color 数据传递给片元着色器
+    const vertex = `
+      attribute vec2 position;
+      varying vec3 color;
+
+      void main() {
+        gl_PointSize = 1.0;
+        color = vec3(0.5 + position * 0.5, 0.0);
+        gl_Position = vec4(position * 0.5, 1.0, 1.0);
+      }
+    `;
+    // 片元着色器
+    // gl_FragColor 是片元着色器内置变量
+    const fragment = `
+      precision mediump float;
+      varying vec3 color;
+
+      void main()
+      {
+        gl_FragColor = vec4(color, 1.0);
+      }    
+    `;
+    // 创建顶点 shader 对象
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vertexShader, vertex);
+    gl.compileShader(vertexShader);
+    // 创建片元 shader 对象
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fragmentShader, fragment);
+    gl.compileShader(fragmentShader);
+    // 创建 WebGLProgram 程序对象
+    const program = gl.createProgram();
+    // 将 两个 shader 关联到这个 WebGL 程序
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    // 将这个 WebGLProgram 对象链接到 WebGL 上下文对象上
+    gl.linkProgram(program);
+    // 选择启用这个 WebGLProgram 对象
+    gl.useProgram(program);
+
+    // demo1:绘制三角形
+    // 定义三角形的三个顶点
+    let points0 = new Float32Array([
+      -1, -1,
+      0, 1,
+      1, -1,
+    ]);
+
+    // demo2:绘制空心三角形
+    // 线段 图元 需要 6个点
+    let points1 = new Float32Array([
+      -1, -1, 0, 1, 0, 1, 1, -1, 1, -1, -1, -1
+    ]);
+    // 线条 图元 需要 4个点
+    let points2 = new Float32Array([
+      -1, -1, 0, 1, 1, -1, -1, -1
+    ]);
+    // 回路 图元 需要 3个点
+    let points3 = new Float32Array([
+      -1, -1, 0, 1, 1, -1
+    ]);
+
+    // demo3:绘制正N变形和正N角星
+    // 生成正n边形 顶点坐标数组
+    function createVertex1(x, y, r, n) {
+      const sin = Math.sin;
+      const cos = Math.cos;
+      const perAngel = (2 * Math.PI) / n;
+      const positionArray = [];
+      for (let i = 0; i < n; i++) {
+        const angel = i * perAngel;
+        const nx = x + r * cos(angel);
+        const ny = y + r * sin(angel);
+        positionArray.push(nx, ny);
+      }
+      return new Float32Array(positionArray);
+    }
+    // 生成正n角星 顶点坐标数组
+    function createVertex2(x, y, r, R, n) {
+      const sin = Math.sin;
+      const cos = Math.cos;
+      const perAngel = Math.PI / n;
+      const positionArray = [];
+      for (let i = 0; i < 2 * n; i++) {
+        const angel = i * perAngel;
+        if (i % 2 !== 0) {
+          const Rx = x + R * cos(angel);
+          const Ry = y + R * sin(angel);
+          positionArray.push(Rx, Ry);
+        } else {
+          const rx = x + r * cos(angel);
+          const ry = y + r * sin(angel);
+          positionArray.push(rx, ry);
+        }
+      }
+      return new Float32Array(positionArray);
+    }
+    // 正四边形 
+    const points4 = createVertex1(0, 0, 0.5, 4);
+    // 正五边形 
+    const points5 = createVertex1(0, 0, 0.5, 5);
+    // 正六角星 
+    const points6 = createVertex2(0, 0, 0.3, 0.6, 6);
+
+    // 将数据写入缓冲区
+    // 创建一个缓存对象
+    const bufferId = gl.createBuffer();
+    // 将它绑定为当前操作对象
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+    // 把当前的数据写入缓存对象
+    // gl.bufferData(gl.ARRAY_BUFFER, points0, gl.STATIC_DRAW);
+    // gl.bufferData(gl.ARRAY_BUFFER, points1, gl.STATIC_DRAW);
+    // gl.bufferData(gl.ARRAY_BUFFER, points2, gl.STATIC_DRAW);
+    // gl.bufferData(gl.ARRAY_BUFFER, points3, gl.STATIC_DRAW);
+    // gl.bufferData(gl.ARRAY_BUFFER, points4, gl.STATIC_DRAW);
+    // gl.bufferData(gl.ARRAY_BUFFER, points5, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, points6, gl.STATIC_DRAW);
+
+    // 将 buffer 的数据绑定给顶点着色器的 position 变量
+    // 获取顶点着色器中的position变量的地址
+    const vPosition = gl.getAttribLocation(program, 'position');
+    // 给变量设置长度和类型
+    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+    // 激活该变量
+    gl.enableVertexAttribArray(vPosition);
+    // 清理画布内容
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    // 传入三个参数进行绘制
+    // gl.TRIANGLES 表示以三角形为图元绘制
+    // 偏移量
+    // 顶点数量
+    // 三角形图元
+    // gl.drawArrays(gl.TRIANGLES, 0, points0.length / 2);
+    // 线段图元
+    // gl.drawArrays(gl.LINES, 0, points1.length / 2);
+    // 线条图元
+    // gl.drawArrays(gl.LINE_STRIP, 0, points2.length / 2);
+    // 回路图元
+    // gl.drawArrays(gl.LINE_LOOP, 0, points3.length / 2);
+    // 正四边形
+    // 空心 回路图元
+    // gl.drawArrays(gl.LINE_LOOP, 0, points4.length / 2);
+    // 实心 三角扇图元
+    // gl.drawArrays(gl.TRIANGLE_FAN, 0, points4.length / 2);
+    // 正五边形
+    // 空心 回路图元
+    // gl.drawArrays(gl.LINE_LOOP, 0, points5.length / 2);
+    // 实心 三角扇图元
+    // gl.drawArrays(gl.TRIANGLE_FAN, 0, points5.length / 2);
+    // 正六角星
+    // 空心 回路图元
+    gl.drawArrays(gl.LINE_LOOP, 0, points6.length / 2);
+    // 实心 三角扇图元
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, points6.length / 2);
+  </script>
+</body>
+
+</html>
