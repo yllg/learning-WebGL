@@ -2,22 +2,25 @@ import {earcut} from '../common/lib/earcut.js';
 import {Vector2D} from '../common/lib/vector2d.js';
 
 function inTriangle(p1, p2, p3, point) {
+  // 三条边的向量
   const a = p2.copy().sub(p1);
   const b = p3.copy().sub(p2);
   const c = p1.copy().sub(p3);
-
+  // 点到三个顶点的向量
   const u1 = point.copy().sub(p1);
   const u2 = point.copy().sub(p2);
   const u3 = point.copy().sub(p3);
-
+  // 点在三角形内部的充分必要条件是：u1 X a、u2 X b、u3 X c 叉乘cross的符号都相同
+  // Math.sign 返回数字的符号 1, -1, 0, -0, NaN. 代表的各是正数, 负数, 正零, 负零, NaN
   const s1 = Math.sign(a.cross(u1));
+  // 判断是否在 a边上，u1在a边的映射 与 a边长度 的比值在0-1之间
   let p = a.dot(u1) / a.length ** 2;
   if(s1 === 0 && p >= 0 && p <= 1) return true;
-
+  // 判断是否在 b边上
   const s2 = Math.sign(b.cross(u2));
   p = b.dot(u1) / b.length ** 2;
   if(s2 === 0 && p >= 0 && p <= 1) return true;
-
+  // 判断是否在 c边上
   const s3 = Math.sign(c.cross(u3));
   p = c.dot(u1) / c.length ** 2;
   if(s3 === 0 && p >= 0 && p <= 1) return true;
@@ -27,6 +30,7 @@ function inTriangle(p1, p2, p3, point) {
 
 function isPointInPath({vertices, cells}, point) {
   let ret = false;
+  // 每三个一组为三角形，判断点是否在三角形内部
   for(let i = 0; i < cells.length; i += 3) {
     const p1 = new Vector2D(...vertices[cells[i]]);
     const p2 = new Vector2D(...vertices[cells[i + 1]]);
@@ -94,6 +98,7 @@ const vertices = [
 ];
 
 const points = vertices.flat();
+// 使用 earcut 库进行三角剖分
 const triangles = earcut(points);
 // console.log(triangles);
 
