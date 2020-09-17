@@ -41,6 +41,8 @@ function isPointInPath(ctx, x, y) {
   let ret = false;
   draw(cloned, poitions, 'transparent', 'red');
   ret |= cloned.isPointInPath(x, y);
+  // ctx的isPointInPath 仅能判断鼠标是否在最后一次绘制的图形内
+  // 多个图形得用克隆体 再绘制一次新的图形 再进行判断
   if(!ret) {
     draw(cloned, [[100, 100], [100, 200], [150, 200]], 'transparent', 'blue');
     ret |= cloned.isPointInPath(x, y);
