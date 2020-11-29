@@ -1,1 +1,0 @@
-GitHub hook成功！
